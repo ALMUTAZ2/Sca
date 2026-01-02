@@ -1,52 +1,71 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
-import { AnalysisResult } from "../types";
+// services/geminiService.ts
+import {
+  AnalysisResult,
+  JobMatchResult,
+  ResumeSection,
+  ImprovedContent,
+} from "../types";
 
 export class GeminiService {
-  private ai: GoogleGenAI;
+  /**
+   * دالة عامة للاتصال بالباكند
+   */
+  private async callBackend(action: string, payload: any): Promise<any> {
+    try {
+      const response = await fetch("/api/groq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, payload }),
+      });
 
-  constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server Error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data) {
+        throw new Error("No data returned from backend");
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error("callBackend error:", error);
+      throw new Error(error.message || "Unknown backend error");
+    }
   }
 
-  async analyzeContent(content: string): Promise<AnalysisResult> {
-    const response = await this.ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `Analyze the following scraped web content and provide a structured summary: ${content}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            summary: { type: Type.STRING, description: "A concise executive summary." },
-            keyPoints: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING },
-              description: "The most important takeaways."
-            },
-            entities: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "Key people, companies, or technologies mentioned."
-            },
-            sentiment: {
-              type: Type.STRING,
-              description: "The overall tone of the content."
-            }
-          },
-          required: ["summary", "keyPoints", "entities", "sentiment"]
-        }
-      }
-    });
+  // ✅ تحليـل السيرة (مثال قديم عندك)
+  async analyzeResume(content: string): Promise<AnalysisResult> {
+    const result = await this.callBackend("analyzeResume", { content });
+    return result as AnalysisResult;
+  }
 
-    const text = response.text || "{}";
-    try {
-      return JSON.parse(text) as AnalysisResult;
-    } catch (e) {
-      console.error("Failed to parse Gemini response", e);
-      throw new Error("Analysis failed to generate valid structured data.");
-    }
+  // ✅ تحسين جزء من السيرة (مثال)
+  async improveSection(
+    section: ResumeSection,
+    content: string
+  ): Promise<ImprovedContent> {
+    const result = await this.callBackend("improveSection", {
+      section,
+      content,
+    });
+    return result as ImprovedContent;
+  }
+
+  // ⬇️⬇️⬇️ الدالة الجديدة الخاصة بـ Firecrawl ⬇️⬇️⬇️
+
+  /**
+   * استخدام Firecrawl لعمل Crawl لموقع وإرجاع النتيجة
+   * تستدعي الأكشن "crawlWebsite" في الباكند
+   */
+  async crawlWebsite(url: string): Promise<any> {
+    const result = await this.callBackend("crawlWebsite", { url });
+    return result;
   }
 }
 
-export const gemini = new GeminiService();
+// تقدر تنشئ instance جاهزة:
+const geminiService = new GeminiService();
+export default geminiService;

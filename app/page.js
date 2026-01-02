@@ -35,7 +35,14 @@ export default function Home() {
         throw new Error(data?.error || "خطأ غير معروف");
       }
 
-      setResult(JSON.stringify(data, null, 2));
+      // 🧠 نستخرج الـ markdown فقط من النتيجة
+      const pages = Array.isArray(data.data) ? data.data : [];
+      const markdown = pages
+        .map((p) => p.markdown || "")
+        .filter((m) => m.trim().length > 0)
+        .join("\n\n-------------------------\n\n");
+
+      setResult(markdown || "لا يوجد محتوى Markdown في النتيجة.");
     } catch (e) {
       setError(e.message || "حدث خطأ أثناء الزحف");
     } finally {
@@ -131,10 +138,10 @@ export default function Home() {
                 fontSize: "15px",
               }}
             >
-              Result (JSON)
+              Result (Markdown)
             </h2>
 
-          <textarea
+            <textarea
               readOnly
               value={result}
               style={{
@@ -145,6 +152,7 @@ export default function Home() {
                 border: "1px solid #ddd",
                 fontFamily: "monospace",
                 fontSize: "12px",
+                whiteSpace: "pre-wrap",
               }}
             />
           </div>

@@ -35,14 +35,26 @@ export default function Home() {
         throw new Error(data?.error || "خطأ غير معروف");
       }
 
-      // 🧠 نستخرج الـ markdown فقط من النتيجة
+      // 1) نجمع كل الـ markdown من الصفحات
       const pages = Array.isArray(data.data) ? data.data : [];
-      const markdown = pages
+      let markdown = pages
         .map((p) => p.markdown || "")
         .filter((m) => m.trim().length > 0)
         .join("\n\n-------------------------\n\n");
 
-      setResult(markdown || "لا يوجد محتوى Markdown في النتيجة.");
+      // 2) نحذف الصور وصيغ Base64 من الـ markdown
+      markdown = markdown
+        // نحذف ![alt](url)
+        .replace(/!\[[^\]]*]\([^)]*\)/g, "")
+        // نحذف ![](url)
+        .replace(/!\[\]\([^)]*\)/g, "")
+        // نحذف النص placeholder حق Base64
+        .replace(/<Base64-Image-Removed>/g, "")
+        // نرتّب الأسطر الفارغة
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+      setResult(markdown || "تم الزحف لكن ماوجدنا نص مناسب للعرض.");
     } catch (e) {
       setError(e.message || "حدث خطأ أثناء الزحف");
     } finally {
@@ -138,7 +150,7 @@ export default function Home() {
                 fontSize: "15px",
               }}
             >
-              Result (Markdown)
+              Result (Clean Text)
             </h2>
 
             <textarea

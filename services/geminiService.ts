@@ -1,10 +1,4 @@
 // services/geminiService.ts
-import {
-  AnalysisResult,
-  JobMatchResult,
-  ResumeSection,
-  ImprovedContent,
-} from "../types";
 
 export class GeminiService {
   /**
@@ -36,26 +30,6 @@ export class GeminiService {
     }
   }
 
-  // ✅ تحليـل السيرة (مثال قديم عندك)
-  async analyzeResume(content: string): Promise<AnalysisResult> {
-    const result = await this.callBackend("analyzeResume", { content });
-    return result as AnalysisResult;
-  }
-
-  // ✅ تحسين جزء من السيرة (مثال)
-  async improveSection(
-    section: ResumeSection,
-    content: string
-  ): Promise<ImprovedContent> {
-    const result = await this.callBackend("improveSection", {
-      section,
-      content,
-    });
-    return result as ImprovedContent;
-  }
-
-  // ⬇️⬇️⬇️ الدالة الجديدة الخاصة بـ Firecrawl ⬇️⬇️⬇️
-
   /**
    * استخدام Firecrawl لعمل Crawl لموقع وإرجاع النتيجة
    * تستدعي الأكشن "crawlWebsite" في الباكند
@@ -66,6 +40,6 @@ export class GeminiService {
   }
 }
 
-// تقدر تنشئ instance جاهزة:
+// instance جاهزة للاستخدام
 const geminiService = new GeminiService();
 export default geminiService;

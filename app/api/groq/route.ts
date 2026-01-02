@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
     switch (action) {
       case "crawlWebsite": {
-        const url = payload?.url;
+        const url = payload?.url as string | undefined;
 
         if (!url) {
           return NextResponse.json(
@@ -20,12 +20,15 @@ export async function POST(req: Request) {
           );
         }
 
-        const result = await firecrawl.crawl(url, {
+        // نستخدم any عشان نتجاوز مشكلة typings على خيار formats
+        const options: any = {
           formats: ["markdown"],
           limit: 10,
-        });
+        };
 
-        return NextResponse.json(result);
+        const result = await (firecrawl as any).crawl(url, options);
+
+        return NextResponse.json(result, { status: 200 });
       }
 
       default:
@@ -35,6 +38,7 @@ export async function POST(req: Request) {
         );
     }
   } catch (e: any) {
+    console.error("API /api/groq error:", e);
     return NextResponse.json(
       { error: e?.message || "Server error" },
       { status: 500 }

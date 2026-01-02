@@ -5,12 +5,15 @@ import { useState } from "react";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [result, setResult] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [rawText, setRawText] = useState("");     // النص المنظّف من Firecrawl
+  const [summary, setSummary] = useState("");     // ملخص AI
 
+  // 🕷️ الزحف على الموقع
   const handleCrawl = async () => {
     setError(null);
-    setResult("");
+    setRawText("");
+    setSummary("");
 
     if (!url.trim()) {
       setError("ادخل رابط الموقع أولاً");
@@ -32,7 +35,7 @@ export default function Home() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || "خطأ غير معروف");
+        throw new Error(data?.error || "خطأ غير معروف أثناء الزحف");
       }
 
       // 1) نجمع كل الـ markdown من الصفحات
@@ -44,19 +47,51 @@ export default function Home() {
 
       // 2) نحذف الصور وصيغ Base64 من الـ markdown
       markdown = markdown
-        // نحذف ![alt](url)
-        .replace(/!\[[^\]]*]\([^)]*\)/g, "")
-        // نحذف ![](url)
-        .replace(/!\[\]\([^)]*\)/g, "")
-        // نحذف النص placeholder حق Base64
+        .replace(/!\[[^\]]*]\([^)]*\)/g, "")   // ![alt](url)
+        .replace(/!\[\]\([^)]*\)/g, "")        // ![](url)
         .replace(/<Base64-Image-Removed>/g, "")
-        // نرتّب الأسطر الفارغة
         .replace(/\n{3,}/g, "\n\n")
         .trim();
 
-      setResult(markdown || "تم الزحف لكن ماوجدنا نص مناسب للعرض.");
+      setRawText(markdown || "تم الزحف لكن ماوجدنا نص مناسب للعرض.");
     } catch (e) {
       setError(e.message || "حدث خطأ أثناء الزحف");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🧠 تلخيص المحتوى واستخراج النقاط المهمة
+  const handleSummarize = async () => {
+    setError(null);
+    setSummary("");
+
+    if (!rawText.trim()) {
+      setError("لا يوجد محتوى لتحليله. قم بالزحف أولاً.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/groq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "summarizeWebsite",
+          payload: { markdown: rawText },
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "خطأ غير معروف أثناء التلخيص");
+      }
+
+      setSummary(data.summary || "لم يتم إرجاع ملخص من الواجهة الخلفية.");
+    } catch (e) {
+      setError(e.message || "حدث خطأ أثناء التلخيص");
     } finally {
       setLoading(false);
     }
@@ -77,7 +112,7 @@ export default function Home() {
       <div
         style={{
           width: "100%",
-          maxWidth: "600px",
+          maxWidth: "700px",
           backgroundColor: "#fff",
           borderRadius: "16px",
           padding: "20px",
@@ -93,7 +128,7 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
-          Firecrawl Crawler
+          Firecrawl + AI Researcher
         </h1>
 
         <label
@@ -117,23 +152,50 @@ export default function Home() {
           }}
         />
 
-        <button
-          onClick={handleCrawl}
-          disabled={loading}
+        <div
           style={{
-            width: "100%",
-            padding: "10px",
-            borderRadius: "8px",
-            border: "none",
-            fontWeight: 600,
-            backgroundColor: "#111",
-            color: "#fff",
-            opacity: loading ? 0.7 : 1,
-            cursor: loading ? "default" : "pointer",
+            display: "flex",
+            gap: "8px",
+            marginBottom: "8px",
           }}
         >
-          {loading ? "جارٍ الزحف..." : "Start Crawling"}
-        </button>
+          <button
+            onClick={handleCrawl}
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: "8px",
+              border: "none",
+              fontWeight: 600,
+              backgroundColor: "#111",
+              color: "#fff",
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "default" : "pointer",
+            }}
+          >
+            {loading ? "جارٍ التنفيذ..." : "1️⃣ Crawl الموقع"}
+          </button>
+
+          <button
+            onClick={handleSummarize}
+            disabled={loading || !rawText}
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: "8px",
+              border: "none",
+              fontWeight: 600,
+              backgroundColor: rawText ? "#2563eb" : "#9ca3af",
+              color: "#fff",
+              opacity: loading ? 0.7 : 1,
+              cursor:
+                loading || !rawText ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "جارٍ التنفيذ..." : "2️⃣ تلخيص النقاط المهمة"}
+          </button>
+        </div>
 
         {error && (
           <p style={{ marginTop: "10px", color: "red", fontSize: "14px" }}>
@@ -141,7 +203,7 @@ export default function Home() {
           </p>
         )}
 
-        {result && (
+        {rawText && (
           <div style={{ marginTop: "16px" }}>
             <h2
               style={{
@@ -150,18 +212,47 @@ export default function Home() {
                 fontSize: "15px",
               }}
             >
-              Result (Clean Text)
+              Raw Content (Cleaned)
             </h2>
 
             <textarea
               readOnly
-              value={result}
+              value={rawText}
               style={{
                 width: "100%",
-                height: "260px",
+                height: "220px",
                 padding: "10px",
                 borderRadius: "8px",
                 border: "1px solid #ddd",
+                fontFamily: "monospace",
+                fontSize: "12px",
+                whiteSpace: "pre-wrap",
+              }}
+            />
+          </div>
+        )}
+
+        {summary && (
+          <div style={{ marginTop: "16px" }}>
+            <h2
+              style={{
+                fontWeight: 600,
+                marginBottom: "8px",
+                fontSize: "15px",
+              }}
+            >
+              AI Summary (Key Points)
+            </h2>
+
+            <textarea
+              readOnly
+              value={summary}
+              style={{
+                width: "100%",
+                height: "220px",
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid "#ddd",
                 fontFamily: "monospace",
                 fontSize: "12px",
                 whiteSpace: "pre-wrap",

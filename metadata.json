@@ -1,0 +1,5 @@
+{
+  "name": "Firecrawl Gemini Researcher",
+  "description": "A high-performance web crawling and analysis dashboard that uses Firecrawl to ingest websites and Gemini AI to extract structured insights and summaries.",
+  "requestFramePermissions": []
+}

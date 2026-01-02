@@ -5,9 +5,9 @@ import { useState } from "react";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [rawText, setRawText] = useState("");     // النص المنظّف من Firecrawl
-  const [summary, setSummary] = useState("");     // ملخص AI
+  const [error, setError] = useState(null);
+  const [rawText, setRawText] = useState(""); // النص المنظّف من Firecrawl
+  const [summary, setSummary] = useState(""); // ملخص AI
 
   // 🕷️ الزحف على الموقع
   const handleCrawl = async () => {
@@ -47,8 +47,8 @@ export default function Home() {
 
       // 2) نحذف الصور وصيغ Base64 من الـ markdown
       markdown = markdown
-        .replace(/!\[[^\]]*]\([^)]*\)/g, "")   // ![alt](url)
-        .replace(/!\[\]\([^)]*\)/g, "")        // ![](url)
+        .replace(/!\[[^\]]*]\([^)]*\)/g, "") // ![alt](url)
+        .replace(/!\[\]\([^)]*\)/g, "") // ![](url)
         .replace(/<Base64-Image-Removed>/g, "")
         .replace(/\n{3,}/g, "\n\n")
         .trim();
@@ -189,8 +189,7 @@ export default function Home() {
               backgroundColor: rawText ? "#2563eb" : "#9ca3af",
               color: "#fff",
               opacity: loading ? 0.7 : 1,
-              cursor:
-                loading || !rawText ? "not-allowed" : "pointer",
+              cursor: loading || !rawText ? "not-allowed" : "pointer",
             }}
           >
             {loading ? "جارٍ التنفيذ..." : "2️⃣ تلخيص النقاط المهمة"}
@@ -252,7 +251,7 @@ export default function Home() {
                 height: "220px",
                 padding: "10px",
                 borderRadius: "8px",
-                border: "1px solid "#ddd",
+                border: "1px solid #ddd",
                 fontFamily: "monospace",
                 fontSize: "12px",
                 whiteSpace: "pre-wrap",

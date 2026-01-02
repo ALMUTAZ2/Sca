@@ -12,5 +12,11 @@
     "react": "latest",
     "react-dom": "latest",
     "@mendable/firecrawl-js": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/node": "latest"
   }
 }

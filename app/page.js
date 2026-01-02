@@ -12,17 +12,21 @@ export default function Home() {
     setError(null);
     setResult("");
 
-    if (!url) {
+    if (!url.trim()) {
       setError("ادخل رابط الموقع أولاً");
       return;
     }
 
     setLoading(true);
+
     try {
-      const res = await fetch("/api/crawl", {
+      const res = await fetch("/api/groq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({
+          action: "crawlWebsite",
+          payload: { url },
+        }),
       });
 
       const data = await res.json();
@@ -48,7 +52,7 @@ export default function Home() {
         alignItems: "center",
         flexDirection: "column",
         padding: "24px",
-        backgroundColor: "#f5f5f5"
+        backgroundColor: "#f5f5f5",
       }}
     >
       <div
@@ -59,7 +63,7 @@ export default function Home() {
           borderRadius: "16px",
           padding: "20px",
           marginTop: "40px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.06)"
+          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
         }}
       >
         <h1
@@ -67,15 +71,18 @@ export default function Home() {
             fontSize: "22px",
             fontWeight: "700",
             textAlign: "center",
-            marginBottom: "16px"
+            marginBottom: "16px",
           }}
         >
           Firecrawl Crawler
         </h1>
 
-        <label style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+        <label
+          style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}
+        >
           URL
         </label>
+
         <input
           type="text"
           value={url}
@@ -87,7 +94,7 @@ export default function Home() {
             borderRadius: "8px",
             border: "1px solid #ddd",
             marginBottom: "12px",
-            outline: "none"
+            outline: "none",
           }}
         />
 
@@ -103,7 +110,7 @@ export default function Home() {
             backgroundColor: "#111",
             color: "#fff",
             opacity: loading ? 0.7 : 1,
-            cursor: loading ? "default" : "pointer"
+            cursor: loading ? "default" : "pointer",
           }}
         >
           {loading ? "جارٍ الزحف..." : "Start Crawling"}
@@ -117,10 +124,17 @@ export default function Home() {
 
         {result && (
           <div style={{ marginTop: "16px" }}>
-            <h2 style={{ fontWeight: 600, marginBottom: "8px", fontSize: "15px" }}>
+            <h2
+              style={{
+                fontWeight: 600,
+                marginBottom: "8px",
+                fontSize: "15px",
+              }}
+            >
               Result (JSON)
             </h2>
-            <textarea
+
+          <textarea
               readOnly
               value={result}
               style={{
@@ -130,7 +144,7 @@ export default function Home() {
                 borderRadius: "8px",
                 border: "1px solid #ddd",
                 fontFamily: "monospace",
-                fontSize: "12px"
+                fontSize: "12px",
               }}
             />
           </div>
@@ -138,4 +152,4 @@ export default function Home() {
       </div>
     </main>
   );
-                }
+}
